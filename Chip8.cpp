@@ -41,8 +41,7 @@ Chip8::Chip8(bool debug) {
     for (int i = 0; i < sizeof(font); i++)
         memory[i] = font[i];
 
-    // TODO: use better random seed
-    srand(1234);
+    srand(clock());
 }
 
 Chip8::~Chip8() = default;
