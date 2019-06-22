@@ -12,7 +12,7 @@ class Chip8 {
  public:
     uint8_t display[DISPLAY_HEIGHT][DISPLAY_WIDTH] = {};
 
-    Chip8();
+    explicit Chip8(bool debug = false);
     ~Chip8();
 
     bool LoadRom(const std::string& path);
@@ -20,6 +20,7 @@ class Chip8 {
     bool IsComplete();
 
     bool ShouldUpdateDisplay();
+    bool ShouldBuzz();
 
     bool GetKey(uint8_t key);
     void SetKey(uint8_t key, bool pressed);
@@ -36,11 +37,15 @@ class Chip8 {
     uint8_t dt;     // delay timer
     uint8_t st;     // sound timer
 
+    clock_t prev_timer_start;
+
     bool update_display;
     void DrawSprite(int posx, int posy, int height);
 
     // each bit represents a key
     uint16_t keys;
+
+    bool debug;
 };
 
 #endif //CHIP8LER__CHIP8_HPP_

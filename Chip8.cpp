@@ -4,7 +4,9 @@
 #include "Chip8.hpp"
 
 // TODO: separate object construction from initialization
-Chip8::Chip8() {
+Chip8::Chip8(bool debug) {
+    this->debug = debug;
+
     opcode = 0;
     I = 0;
     pc = 0x200;  // programs start at 0x200 (512)
@@ -14,6 +16,8 @@ Chip8::Chip8() {
 
     keys = 0;  // every key is 0
     update_display = false;
+
+    prev_timer_start = clock();
 
     uint8_t font[] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
@@ -72,18 +76,27 @@ void Chip8::Cycle() {
     uint8_t y = low >> 4 & 0x0F;
     uint8_t kk = low;
 
+    // delay timer and sound timer
+    if (clock() - prev_timer_start > (1000 / 60)) {
+        if (dt > 0) dt--;
+        if (st > 0) st--;
+        prev_timer_start = clock();
+    }
+
     update_display = false;
 
-    std::cout << std::hex << std::uppercase;
-    std::cout << "pc:0x" << pc << " opcode:0x" << opcode << " x:" << int(x) << " y:" << int(y) << std::endl;
+    if (debug) {
+        std::cout << std::hex << std::uppercase;
+        std::cout << "pc:0x" << pc << " opcode:0x" << opcode << " x:" << int(x) << " y:" << int(y) << std::endl;
+    }
 
-    switch (opcode & 0xF000) {
+    switch (opcode & 0xF000u) {
         case 0x0000:
             switch (low) {
                 case 0xE0:  // CLS - Clear screen
-                    for (int j = 0; j < DISPLAY_HEIGHT; j++) {
-                        for (int i = 0; i < DISPLAY_WIDTH; i++) {
-                            display[j][i] = 0x0;
+                    for (auto & j : display) {
+                        for (unsigned char & i : j) {
+                            i = 0x0;
                         }
                     }
                     pc += 2;
@@ -91,6 +104,8 @@ void Chip8::Cycle() {
                 case 0xEE:  // RET - Return from call
                     pc = stack[--sp] + 2;
                     break;
+                default:
+                    pc += 2;
             }
             break;
         case 0x1000:  // JP nnn
@@ -169,11 +184,10 @@ void Chip8::Cycle() {
             pc = nnn + V[0x0];
             break;
         case 0xC000:  // RND Vx, kk
-            V[x] = rand() & kk;
+            V[x] = (uint8_t) rand() & kk;
             pc += 2;
             break;
         case 0xD000:  // DRW Vx, Vy, n
-            std::cout << std::hex << int(y) << std::endl;
             DrawSprite(V[x], V[y], n);
             update_display = true;
             pc += 2;
@@ -250,7 +264,6 @@ void Chip8::Cycle() {
 }
 
 void Chip8::DrawSprite(int posx, int posy, int height) {
-    std::cout << "x=" << posx << " y=" << posy << std::endl;
     uint8_t x, y, val;
 
     for (int j = 0; j < height; j++) {
@@ -275,8 +288,12 @@ bool Chip8::ShouldUpdateDisplay() {
     return update_display;
 }
 
+bool Chip8::ShouldBuzz() {
+    return st > 0;
+}
+
 bool Chip8::GetKey(uint8_t key) {
-    return keys >> key & 0x1;
+    return keys >> key & 0x1u;
 }
 
 void Chip8::SetKey(uint8_t key, bool pressed) {
