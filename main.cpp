@@ -22,10 +22,17 @@ int main(int argc, char **argv) {
     while (!chip_8->IsComplete()) {
         chip_8->Cycle();
 
-        // Draw to the display
+        // Draw to the display TODO: use OpenGL
         if (chip_8->ShouldUpdateDisplay()) {
             draw_display(chip_8);
         }
+
+        // TODO: implement buzz
+        if (chip_8->ShouldBuzz()) {
+
+        }
+
+        // TODO: update keys
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 / hz));
     }

@@ -10,8 +10,6 @@
 
 class Chip8 {
  public:
-    uint8_t display[DISPLAY_HEIGHT][DISPLAY_WIDTH] = {};
-
     explicit Chip8(bool debug = false);
     ~Chip8();
 
@@ -19,11 +17,13 @@ class Chip8 {
     void Cycle();
     bool IsComplete();
 
+    uint8_t display[DISPLAY_HEIGHT][DISPLAY_WIDTH] = {};
     bool ShouldUpdateDisplay();
     bool ShouldBuzz();
 
     bool GetKey(uint8_t key);
     void SetKey(uint8_t key, bool pressed);
+
  private:
     uint16_t opcode;
     uint8_t memory[MEMORY_SIZE] = {};
