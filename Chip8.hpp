@@ -3,11 +3,15 @@
 
 #define MEMORY_SIZE 4096
 #define STACK_SIZE 16
+#define DISPLAY_WIDTH 64
+#define DISPLAY_HEIGHT 32
 
 #include <string>
 
 class Chip8 {
  public:
+    uint8_t display[DISPLAY_HEIGHT][DISPLAY_WIDTH] = {};
+
     Chip8();
     ~Chip8();
 
@@ -15,6 +19,9 @@ class Chip8 {
     void Cycle();
     bool IsComplete();
 
+    bool ShouldUpdateDisplay();
+
+    bool GetKey(uint8_t key);
     void SetKey(uint8_t key, bool pressed);
  private:
     uint16_t opcode;
@@ -29,14 +36,11 @@ class Chip8 {
     uint8_t dt;     // delay timer
     uint8_t st;     // sound timer
 
-    uint8_t display[32][64] = {};
+    bool update_display;
+    void DrawSprite(int posx, int posy, int height);
 
     // each bit represents a key
     uint16_t keys;
-    bool GetKey(uint8_t key);
-
-    void push(uint16_t value);
-    uint16_t pop();
 };
 
 #endif //CHIP8LER__CHIP8_HPP_

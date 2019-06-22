@@ -13,6 +13,29 @@ Chip8::Chip8() {
     st = 0;
 
     keys = 0;  // every key is 0
+    update_display = false;
+
+    uint8_t font[] = {
+        0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
+        0x20, 0x60, 0x20, 0x20, 0x70,  // 1
+        0xF0, 0x10, 0xF0, 0x80, 0xF0,  // 2
+        0xF0, 0x10, 0xF0, 0x10, 0xF0,  // 3
+        0x90, 0x90, 0xF0, 0x10, 0x10,  // 4
+        0xF0, 0x80, 0xF0, 0x10, 0xF0,  // 5
+        0xF0, 0x80, 0xF0, 0x90, 0xF0,  // 6
+        0xF0, 0x10, 0x20, 0x40, 0x40,  // 7
+        0xF0, 0x90, 0xF0, 0x90, 0xF0,  // 8
+        0xF0, 0x90, 0xF0, 0x10, 0xF0,  // 9
+        0xF0, 0x90, 0xF0, 0x90, 0x90,  // A
+        0xE0, 0x90, 0xE0, 0x90, 0xE0,  // B
+        0xF0, 0x80, 0x80, 0x80, 0xF0,  // C
+        0xE0, 0x90, 0x90, 0x90, 0xE0,  // D
+        0xF0, 0x80, 0xF0, 0x80, 0xF0,  // E
+        0xF0, 0x80, 0xF0, 0x80, 0x80,  // F
+    };
+
+    for (int i = 0; i < sizeof(font); i++)
+        memory[i] = font[i];
 
     // TODO: use better random seed
     srand(1234);
@@ -46,16 +69,23 @@ void Chip8::Cycle() {
     uint16_t nnn = opcode & 0x0FFF;
     uint8_t n = low & 0x0F;
     uint8_t x = high & 0x0F;
-    uint8_t y = low & 0xF0;
+    uint8_t y = low >> 4 & 0x0F;
     uint8_t kk = low;
 
+    update_display = false;
+
     std::cout << std::hex << std::uppercase;
-    std::cout << "pc:0x" << pc << " opcode:0x" << opcode << std::endl;
+    std::cout << "pc:0x" << pc << " opcode:0x" << opcode << " x:" << int(x) << " y:" << int(y) << std::endl;
 
     switch (opcode & 0xF000) {
         case 0x0000:
             switch (low) {
                 case 0xE0:  // CLS - Clear screen
+                    for (int j = 0; j < DISPLAY_HEIGHT; j++) {
+                        for (int i = 0; i < DISPLAY_WIDTH; i++) {
+                            display[j][i] = 0x0;
+                        }
+                    }
                     pc += 2;
                     break;
                 case 0xEE:  // RET - Return from call
@@ -143,7 +173,9 @@ void Chip8::Cycle() {
             pc += 2;
             break;
         case 0xD000:  // DRW Vx, Vy, n
-            // TODO: implement drawing
+            std::cout << std::hex << int(y) << std::endl;
+            DrawSprite(V[x], V[y], n);
+            update_display = true;
             pc += 2;
             break;
         case 0xE000:  // Input
@@ -212,11 +244,35 @@ void Chip8::Cycle() {
                     pc += 2;
             }
             break;
+        default:
+            pc += 2;
+    }
+}
+
+void Chip8::DrawSprite(int posx, int posy, int height) {
+    std::cout << "x=" << posx << " y=" << posy << std::endl;
+    uint8_t x, y, val;
+
+    for (int j = 0; j < height; j++) {
+        for (int i = 0; i < 8; i++) {
+            x = (posx + i) % DISPLAY_WIDTH;
+            y = (posy + j) % DISPLAY_HEIGHT;
+            val = memory[I + j] >> (7 - i) & 0x1;
+            display[y][x] ^= val;
+
+            // catch bits that are changed by a set bit
+            if (val && !display[y][x])
+                V[0xF] = 1;
+        }
     }
 }
 
 bool Chip8::IsComplete() {
     return pc != 0x200 && opcode == 0x0000;
+}
+
+bool Chip8::ShouldUpdateDisplay() {
+    return update_display;
 }
 
 bool Chip8::GetKey(uint8_t key) {
@@ -228,12 +284,4 @@ void Chip8::SetKey(uint8_t key, bool pressed) {
         keys |= 0x1 << key;
     else
         keys &= ~(0x1 << key);
-}
-
-void Chip8::push(uint16_t value) {
-    stack[sp++] = value;
-}
-
-uint16_t Chip8::pop() {
-    return stack[--sp];
 }
