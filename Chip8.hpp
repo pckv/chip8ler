@@ -7,6 +7,7 @@
 #define DISPLAY_HEIGHT 32
 
 #include <string>
+#include <chrono>
 
 class Chip8 {
  public:
@@ -15,7 +16,7 @@ class Chip8 {
 
     bool LoadRom(const std::string& path);
     void Cycle();
-    bool IsComplete();
+    bool HasNoInstructions();
 
     uint8_t display[DISPLAY_HEIGHT][DISPLAY_WIDTH] = {};
     bool ShouldUpdateDisplay();
@@ -37,7 +38,7 @@ class Chip8 {
     uint8_t dt;     // delay timer
     uint8_t st;     // sound timer
 
-    clock_t prev_timer_start;
+    std::chrono::system_clock::time_point prev_timer_start;
 
     bool update_display;
     void DrawSprite(int posx, int posy, int height);

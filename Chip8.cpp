@@ -3,6 +3,8 @@
 
 #include "Chip8.hpp"
 
+using Clock=std::chrono::system_clock;
+
 // TODO: separate object construction from initialization
 Chip8::Chip8(bool debug) {
     this->debug = debug;
@@ -17,7 +19,7 @@ Chip8::Chip8(bool debug) {
     keys = 0;  // every key is 0
     update_display = false;
 
-    prev_timer_start = clock();
+    prev_timer_start = Clock::now();
 
     uint8_t font[] = {
         0xF0, 0x90, 0x90, 0x90, 0xF0,  // 0
@@ -41,7 +43,8 @@ Chip8::Chip8(bool debug) {
     for (int i = 0; i < sizeof(font); i++)
         memory[i] = font[i];
 
-    srand(clock());
+    // TODO: use proper seed
+    srand(1234);
 }
 
 Chip8::~Chip8() = default;
@@ -76,10 +79,13 @@ void Chip8::Cycle() {
     uint8_t kk = low;
 
     // delay timer and sound timer
-    if (clock() - prev_timer_start > (1000 / 60)) {
+    auto now = Clock::now();
+    long duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - prev_timer_start).count();
+
+    if (duration > (1000 / 60)) {
         if (dt > 0) dt--;
         if (st > 0) st--;
-        prev_timer_start = clock();
+        prev_timer_start = Clock::now();
     }
 
     update_display = false;
@@ -89,7 +95,7 @@ void Chip8::Cycle() {
         std::cout << "pc:0x" << pc << " opcode:0x" << opcode << " x:" << int(x) << " y:" << int(y) << std::endl;
     }
 
-    switch (opcode & 0xF000u) {
+    switch (opcode & 0xF000) {
         case 0x0000:
             switch (low) {
                 case 0xE0:  // CLS - Clear screen
@@ -98,6 +104,7 @@ void Chip8::Cycle() {
                             point = 0x0;
                         }
                     }
+                    update_display = true;
                     pc += 2;
                     break;
                 case 0xEE:  // RET - Return from call
@@ -132,8 +139,6 @@ void Chip8::Cycle() {
             pc += 2;
             break;
         case 0x8000:
-            uint16_t result;
-
             switch (n) {
                 case 0x0:  // LD Vx, Vy
                     V[x] = V[y];
@@ -148,9 +153,8 @@ void Chip8::Cycle() {
                     V[x] = V[x] ^ V[y];
                     break;
                 case 0x4:  // ADD Vx, Vy
-                    result = V[x] + V[y];
-                    V[0xF] = result > 0xFF ? 1 : 0;
-                    V[x] = result & 0x00FF;
+                    V[0xF] = ((uint16_t) V[x] + (uint16_t) V[y]) > 0xFF ? 1 : 0;
+                    V[x] = V[x] + V[y];
                     break;
                 case 0x5:  // SUB Vx, Vy
                     V[0xF] = V[x] > V[y] ? 1 : 0;
@@ -165,7 +169,7 @@ void Chip8::Cycle() {
                     V[x] = V[y] - V[x];
                     break;
                 case 0xE:  // SHL Vx
-                    V[0xF] = V[x] & 0x1;
+                    V[0xF] = (V[x] >> 7) & 0x1;
                     V[x] *= 2;
                     break;
             }
@@ -234,23 +238,25 @@ void Chip8::Cycle() {
                     pc += 2;
                     break;
                 case 0x29:  // LD F, Vx
-                    I = x * 5;
+                    I = V[x] * 5;
                     pc += 2;
                     break;
                 case 0x33:  // LD B, Vx
-                    memory[I] = V[x] / 100;             // hundredth digit
+                    memory[I] = V[x] % 1000 / 100;      // hundredth digit
                     memory[I + 1] = V[x] % 100 / 10;    // tenth digit
                     memory[I + 2] = V[x] % 10;          // ones digit
                     pc += 2;
                     break;
                 case 0x55:  // LD [I], Vx
-                    for (int i = 0; i < x; i++)
+                    for (int i = 0; i <= x; i++)
                         memory[I + i] = V[i];
+                    I += x + 1;
                     pc += 2;
                     break;
                 case 0x65:  // LD Vx, [I]
-                    for (int i = 0; i < x; i++)
+                    for (int i = 0; i <= x; i++)
                         V[i] = memory[I + i];
+                    I += x + 1;
                     pc += 2;
                     break;
                 default:
@@ -263,24 +269,24 @@ void Chip8::Cycle() {
 }
 
 void Chip8::DrawSprite(int posx, int posy, int height) {
-    uint8_t x, y, val;
+    uint8_t x, y, point;
 
     for (int j = 0; j < height; j++) {
         y = (posy + j) % DISPLAY_HEIGHT;
 
         for (int i = 0; i < 8; i++) {
             x = (posx + i) % DISPLAY_WIDTH;
-            val = memory[I + j] >> (7 - i) & 0x1;
-            display[y][x] ^= val;
+            point = memory[I + j] >> (7 - i) & 0x1;
+            display[y][x] ^= point;
 
             // catch bits that are changed by a set bit
-            if (val && !display[y][x])
+            if (point && !display[y][x])
                 V[0xF] = 1;
         }
     }
 }
 
-bool Chip8::IsComplete() {
+bool Chip8::HasNoInstructions() {
     return pc != 0x200 && opcode == 0x0000;
 }
 
