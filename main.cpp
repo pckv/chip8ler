@@ -5,7 +5,7 @@
 #include "Chip8.hpp"
 #include "Display.hpp"
 
-#define CLOCK_SPEED 60
+#define CLOCK_SPEED 500  // CHIP8 should be 500Hz, SuperCHIP should be 1000hz
 
 void draw_display_cout(Chip8 *chip_8) {
     for (auto & rows : chip_8->display) {
@@ -17,19 +17,20 @@ void draw_display_cout(Chip8 *chip_8) {
 }
 
 int main(int argc, char **argv) {
-    std::string rom_path = "/home/pc/dev/cpp/chip8ler/roms/programs/Chip8 emulator Logo [Garstyciuks].ch8";
+    bool running = true;
+    std::string rom_path = "/home/pc/dev/cpp/chip8ler/roms/games/Tetris [Fran Dachille, 1991].ch8";
 
     auto *chip_8 = new Chip8();
     chip_8->LoadRom(rom_path);
 
-    auto *display = new Display();
+    auto *display = new Display(chip_8);
 
-    while (!chip_8->IsComplete()) {
+    while (running) {
         chip_8->Cycle();
 
         // Draw to display
         if (chip_8->ShouldUpdateDisplay()) {
-            display->Draw(chip_8);
+            display->Draw();
         }
 
         // TODO: implement buzz
@@ -38,6 +39,8 @@ int main(int argc, char **argv) {
         }
 
         // TODO: update keys
+        display->HandleKeys(running);
+
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 / CLOCK_SPEED));
     }

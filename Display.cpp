@@ -4,7 +4,8 @@
 
 #define err(msg) std::cout << msg << ": " << SDL_GetError() << std::endl
 
-Display::Display() {
+Display::Display(Chip8 *chip_8) {
+    this->chip_8 = chip_8;
     window = nullptr;
     renderer = nullptr;
 
@@ -32,7 +33,7 @@ Display::~Display() {
     SDL_Quit();
 }
 
-void Display::Draw(Chip8 *chip_8) {
+void Display::Draw() {
     SDL_SetRenderDrawColor(renderer, 0x0, 0x0, 0x0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
@@ -48,4 +49,33 @@ void Display::Draw(Chip8 *chip_8) {
     }
 
     SDL_RenderPresent(renderer);
+}
+
+uint8_t Display::GetKeyIndex(SDL_Keycode keycode) {
+    for (int i = 0; i < sizeof(keymap); i++) {
+        if (keycode == keymap[i]) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void Display::HandleKeys(bool &running) {
+    SDL_Event e;
+
+    while (SDL_PollEvent(&e) != 0) {
+        // Handle quitting SDL
+        if (e.type == SDL_QUIT) {
+            running = false;
+        }
+
+        // Handle keypress
+        if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
+            uint8_t key = GetKeyIndex(e.key.keysym.sym);
+            if (key >= 0) {
+                chip_8->SetKey(key, e.type == SDL_KEYDOWN);
+            }
+        }
+    }
 }

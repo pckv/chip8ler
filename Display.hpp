@@ -10,13 +10,28 @@
 
 class Display {
  public:
-    Display();
+    explicit Display(Chip8 *chip_8);
     ~Display();
 
-    void Draw(Chip8 *chip_8);
+    void Draw();
+    void HandleKeys(bool &running);
  private:
+    Chip8 *chip_8;
     SDL_Window *window;
     SDL_Renderer *renderer;
+
+    uint8_t GetKeyIndex(SDL_Keycode keycode);
+    // these are mappings to index 0-F. Layout should be:
+    //      1   2   3   C
+    //      4   5   6   D
+    //      7   8   9   E
+    //      A   0   B   F
+    SDL_Keycode keymap[16] {
+        SDLK_x, SDLK_1, SDLK_2, SDLK_3,
+        SDLK_q, SDLK_w, SDLK_e, SDLK_a,
+        SDLK_s, SDLK_d, SDLK_z, SDLK_c,
+        SDLK_4, SDLK_r, SDLK_f, SDLK_v
+    };
 };
 
 #endif //CHIP8LER__DISPLAY_HPP_
