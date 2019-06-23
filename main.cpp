@@ -4,9 +4,9 @@
 #include "Chip8.hpp"
 
 void draw_display(Chip8 *chip_8) {
-    for (auto & y : chip_8->display) {
-        for (unsigned char x : y) {
-            std::cout << (x ? "#" : " ");
+    for (auto & rows : chip_8->display) {
+        for (uint8_t point : rows) {
+            std::cout << (point ? "#" : " ");
         }
         std::cout << std::endl;
     }

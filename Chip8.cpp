@@ -93,9 +93,9 @@ void Chip8::Cycle() {
         case 0x0000:
             switch (low) {
                 case 0xE0:  // CLS - Clear screen
-                    for (auto & j : display) {
-                        for (unsigned char & i : j) {
-                            i = 0x0;
+                    for (auto & rows : display) {
+                        for (uint8_t & point : rows) {
+                            point = 0x0;
                         }
                     }
                     pc += 2;
@@ -266,9 +266,10 @@ void Chip8::DrawSprite(int posx, int posy, int height) {
     uint8_t x, y, val;
 
     for (int j = 0; j < height; j++) {
+        y = (posy + j) % DISPLAY_HEIGHT;
+
         for (int i = 0; i < 8; i++) {
             x = (posx + i) % DISPLAY_WIDTH;
-            y = (posy + j) % DISPLAY_HEIGHT;
             val = memory[I + j] >> (7 - i) & 0x1;
             display[y][x] ^= val;
 
