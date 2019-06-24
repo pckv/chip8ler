@@ -14,7 +14,7 @@ class Display {
     ~Display();
 
     void Draw();
-    void HandleKeys(bool &running);
+    void HandleInput(bool &running);
  private:
     Chip8 *chip_8;
     SDL_Window *window;

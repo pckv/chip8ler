@@ -61,7 +61,7 @@ uint8_t Display::GetKeyIndex(SDL_Keycode keycode) {
     return -1;
 }
 
-void Display::HandleKeys(bool &running) {
+void Display::HandleInput(bool &running) {
     SDL_Event e;
 
     while (SDL_PollEvent(&e) != 0) {

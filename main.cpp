@@ -18,10 +18,20 @@ void draw_display_cout(Chip8 *chip_8) {
 
 int main(int argc, char **argv) {
     bool running = true;
-    std::string rom_path = "/home/pc/dev/cpp/chip8ler/roms/games/Tetris [Fran Dachille, 1991].ch8";
+
+    if (argc < 2) {
+        std::cout << "Usage: chip8ler <rom_file>" << std::endl;
+        return 1;
+    }
+
+    std::string rom_path = argv[1];
 
     auto *chip_8 = new Chip8();
-    chip_8->LoadRom(rom_path);
+    if (!chip_8->LoadRom(rom_path)) {
+        return 1;
+    }
+
+    std::cout << "Starting " << rom_path << std::endl;
 
     auto *display = new Display(chip_8);
 
@@ -38,9 +48,7 @@ int main(int argc, char **argv) {
 
         }
 
-        // TODO: update keys
-        display->HandleKeys(running);
-
+        display->HandleInput(running);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 / CLOCK_SPEED));
     }
