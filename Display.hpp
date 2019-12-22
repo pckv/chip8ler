@@ -10,11 +10,11 @@
 
 class Display {
  public:
-    explicit Display(Chip8 *chip_8);
+    explicit Display(Chip8 *chip_8, const char *title);
     ~Display();
 
     void Draw();
-    void HandleInput(bool &running);
+    bool HandleInput(bool &running);
  private:
     Chip8 *chip_8;
     SDL_Window *window;
