@@ -4,7 +4,7 @@
 
 #define err(msg) std::cout << msg << ": " << SDL_GetError() << std::endl
 
-Display::Display(Chip8 *chip_8) {
+Display::Display(Chip8 *chip_8, const char *title) {
     this->chip_8 = chip_8;
     window = nullptr;
     renderer = nullptr;
@@ -13,7 +13,7 @@ Display::Display(Chip8 *chip_8) {
         err("Failed to initialize SDL");
     }
 
-    window = SDL_CreateWindow("Chip8ler", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+    window = SDL_CreateWindow(title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if (window == nullptr) {
         err("Could not create SDL window");
     }
@@ -61,7 +61,7 @@ uint8_t Display::GetKeyIndex(SDL_Keycode keycode) {
     return -1;
 }
 
-void Display::HandleInput(bool &running) {
+bool Display::HandleInput(bool &running) {
     SDL_Event e;
 
     while (SDL_PollEvent(&e) != 0) {
@@ -76,6 +76,10 @@ void Display::HandleInput(bool &running) {
             if (key >= 0) {
                 chip_8->SetKey(key, e.type == SDL_KEYDOWN);
             }
+
+            return true;
         }
     }
+
+    return false;
 }
